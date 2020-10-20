@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+ 
+    </head>
+
+    <body>
+
+        <h1>Aggregate data</h1>
+
+        {% for dev, lines in dev_report.items %}
+
+            <p><b>{{lines.0}}</b></p>
+
+            <ul>
+
+                {% for line in lines|slice:"1:" %}
+
+                    <li>{{line}}</li>
+
+                {% endfor %}
+                
+            </ul> <br>
+
+        {% endfor %}
+
+    </body>
+
+</html>
