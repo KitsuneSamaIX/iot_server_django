@@ -1,6 +1,7 @@
 """Models for iot devices"""
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 class DeviceType(models.Model):
@@ -23,7 +24,8 @@ class Device(models.Model):
     serial_number = models.CharField(max_length=100, null=False, blank=False)
     type = models.ForeignKey(DeviceType, null=False, blank=False, on_delete=models.CASCADE)
     owner = models.ForeignKey(User, null=True, blank=False, on_delete=models.SET_NULL)
-    registration_datetime = models.DateTimeField(null=False, blank=False)
+    # Note: we pass the callable 'timezone.now' and NOT the fixed value 'timezone.now()', because 'timezone.now()' would be evaluated only ONE time on startup
+    registration_datetime = models.DateTimeField(null=False, blank=False, default=timezone.now)
     aws_thing_name = models.CharField(max_length=100, unique=True, null=False, blank=False)
     state = models.JSONField(null=True, blank=True)
 
@@ -38,7 +40,8 @@ class Device(models.Model):
 
 class Log(models.Model):
     device = models.ForeignKey(Device, null=False, blank=False, on_delete=models.CASCADE)
-    reception_datetime = models.DateTimeField(null=False, blank=False)
+    # Note: we pass the callable 'timezone.now' and NOT the fixed value 'timezone.now()'
+    reception_datetime = models.DateTimeField(null=False, blank=False, default=timezone.now)
     log_file = models.JSONField(null=False, blank=False)
 
     def __str__(self):

@@ -25,11 +25,12 @@ def create_device_and_populate_logs(n, device_type=DeviceType.objects.get(kind='
         print(f'progress: {i+1}/{n}')
 
         # set random values for some attributes
-        test_log['ta0'] = int(random()*100)
-        test_log['ta1'] = cos(i / (n / (3.14 * 2)))*100
-        test_log['ta2'] = sin(i / (n / (3.14 * 2)))*100
+        test_log['ta0'] = int(random() * 1000)
+        test_log['ta1'] = int(random() * 1000)
+        test_log['ta2'] = cos(i / (n / (3.14 * 2))) * 1000
+        test_log['ta3'] = sin(i / (n / (3.14 * 2))) * 1000
 
-        # for each iteration add 30 mins (1800 secs)
-        log_datetime = timezone.datetime.fromtimestamp((ts + (i*1800)), tz=timezone.get_current_timezone())
+        # for each iteration add 10 mins (600 secs)
+        log_datetime = timezone.datetime.fromtimestamp((ts + (i*600)), tz=timezone.get_current_timezone())
 
         Log.objects.create(device=device, reception_datetime=log_datetime, log_file=test_log)

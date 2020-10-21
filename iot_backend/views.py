@@ -9,6 +9,7 @@ import json
 import requests
 from math import floor
 from time import time
+from datetime import datetime
 
 from .models import DeviceType, Device, Log
 
@@ -53,7 +54,7 @@ def save_device_log_data(request):
     """Registers a new device log in the database.
 
     :param request: a request containing (in its body) a set of key fields which uniquely identifies a Device's entry
-     and other arbitrary log fields to be saved in the database.
+    and other arbitrary log fields to be saved in the database.
     :return: HttpResponse.
     """
     body = json.loads(request.body)
@@ -135,16 +136,16 @@ def update_device_shadow_data(request):
                 raise
 
 
-def create_plot(request, pk, attributes):
-    """Returns google charts plot displaying displaying attributes variations for a given device.
+def dev_attrs_line_chart(request, pk, attributes):
+    """Returns a rendered google charts template displaying attributes variations for a given device.
 
     This view will search for all logs of a given device(pk), then it will search in each log file to collect the
     specified attributes to fill the google charts template.
 
     :param request: an http GET request.
     :param pk: primary key of the device.
-    :param attributes: names of attributes to be showed on the graph separated by '&' (ex. par1&par2&par3).
-    :return: a rendered google charts plot displaying required data.
+    :param attributes: names of attributes to be showed on the graph separated by '&' (ex. attr1&attr2&attr3).
+    :return: a rendered google charts' line chart displaying required data.
     """
 
     if request.method != 'GET':
@@ -158,21 +159,21 @@ def create_plot(request, pk, attributes):
     logs = Log.objects.filter(device__pk=pk)
 
     # check if there are some logs
-    if logs.count() == 0:
+    if not logs.exists():
         raise Http404(f"No logs found for device with pk={pk}")
 
     # get list of attributes to display
     attr_list = attributes.split('&')
 
     # header to specify columns' names
-    plot_header = ['Date']
-    plot_header.extend(attr_list)
+    chart_header = ['Date']
+    chart_header.extend(attr_list)
 
     # max number of points to display in graph
     max_points = 100
 
-    # generate input list with points for the plot template
-    plot_points = []
+    # generate input list with points for the chart template
+    chart_points = []
     logs = logs.order_by('reception_datetime')
     step = floor(logs.count() / max_points)
     i = step
@@ -190,7 +191,7 @@ def create_plot(request, pk, attributes):
                                   f"DEVICE: {log.device}  "
                                   )
 
-            plot_points.append(point)
+            chart_points.append(point)
             i = 0
 
         else:
@@ -201,32 +202,119 @@ def create_plot(request, pk, attributes):
     query_performance_report.append(f'TOTAL TIME: {t1 - t0} secs')
 
     # return the rendered webpage
-    return render(request, 'iot_backend/plot.html', {
-        'plot_header': plot_header,
-        'plot_points': plot_points,
+    return render(request, 'iot_backend/line_chart.html', {
+        'chart_header': chart_header,
+        'chart_points': chart_points,
         'device_id': Device.objects.get(pk=pk),
         'query_performance_report': query_performance_report,
     })
 
 
-def aggregate_data(request, actions, pks, attributes):
-    """Returns aggregate data based of specified action, devices, attributes.
+def dev_attrs_aggregate_data_column_chart(request, timeframe, action, pk, attributes):
+    """Displays attributes' aggregate data variations for a given device on a given timeframe.
 
-    The view will display a rendered html page displaying aggregate data for the specified action on specified
-    devices for all specified attributes.
+    This view returns a rendered google charts' column chart template displaying attributes' aggregate data variations
+    of the specified action for a given device on a given timeframe.
 
     :param request: an http GET request.
-    :param actions: names of actions separated by '&' (ex. par1&par2&par3). Currently supported: min, max, avg.
-    :param pks: primary keys of devices separated by '&' (ex. pk1&pk2&pk3).
-    :param attributes: names of attributes separated by '&' (ex. par1&par2&par3).
-    :return: rendered html page with informations required.
+    :param timeframe: the desired timeframe name. Currently supported: year, month, day.
+    :param action: names of action. Currently supported: min, max, avg.
+    :param pk: primary key of the device.
+    :param attributes: names of attributes separated by '&' (ex. attr1&attr2&attr3).
+    :return: a rendered google charts' column chart displaying required data.
     """
-
-    # dictionary of lists of report strings for html template
-    dev_report = {}
 
     if request.method != 'GET':
         return HttpResponse(status=405)  # 405 Method Not Allowed
+
+    # validate parameters passed
+    if ((timeframe not in ['year', 'month', 'day']) or
+            (action not in ['min', 'max', 'avg']) or
+            not (Log.objects.filter(device__pk=pk).exists())):
+
+        raise Http404()
+
+    # get list of attributes to compare
+    attr_list = attributes.split('&')
+
+    # get all logs from specified device
+    logs = Log.objects.filter(device__pk=pk)
+
+    # create chart description
+    chart_title = f"Statistics for device: '{get_object_or_404(Device, pk=pk)}'."
+    chart_subtitle = f"Showing variation of {action} values for {attr_list} attributes per {timeframe}."
+
+    # create chart header
+    chart_header = [timeframe]
+    attr_list_for_header = [f'{action} {attr}' for attr in attr_list]
+    chart_header.extend(attr_list_for_header)
+
+    # group and order by specified timeframe
+    if timeframe == 'year':
+        logs = logs.values_list('reception_datetime__year')
+        logs = logs.order_by('reception_datetime__year')
+
+    elif timeframe == 'month':
+        logs = logs.values_list('reception_datetime__year', 'reception_datetime__month')
+        logs = logs.order_by('reception_datetime__year', 'reception_datetime__month')
+
+    elif timeframe == 'day':
+        logs = logs.values_list('reception_datetime__year', 'reception_datetime__month', 'reception_datetime__day')
+        logs = logs.order_by('reception_datetime__year', 'reception_datetime__month', 'reception_datetime__day')
+
+    # get aggregate data of specified attributes (on specified timeframe defined above)
+    for attr in attr_list:
+        if action == 'min':
+            logs = logs.annotate(**{f'minimum_{attr}': Min(Cast(KeyTextTransform(attr, 'log_file'), output_field=FloatField()))})
+
+        elif action == 'max':
+            logs = logs.annotate(**{f'maximum_{attr}': Max(Cast(KeyTextTransform(attr, 'log_file'), output_field=FloatField()))})
+
+        elif action == 'avg':
+            logs = logs.annotate(**{f'average_{attr}': Avg(Cast(KeyTextTransform(attr, 'log_file'), output_field=FloatField()))})
+
+    # adjust logs' QuerySet tuples for the chart template
+    chart_points = []
+    for t in logs:
+        if timeframe == 'year':
+            new_t = (datetime(t[0], 1, 1),) + t[1:]
+
+        if timeframe == 'month':
+            new_t = (datetime(t[0], t[1], 1),) + t[2:]
+
+        elif timeframe == 'day':
+            new_t = (datetime(t[0], t[1], t[2]),) + t[3:]
+
+        chart_points.append(new_t)
+
+    # return the rendered webpage
+    return render(request, 'iot_backend/column_chart.html', {
+        'chart_title': chart_title,
+        'chart_subtitle': chart_subtitle,
+        'chart_header': chart_header,
+        'chart_points': chart_points,
+        'logs_num': Log.objects.filter(device__pk=pk).count(),  # this query impacts performances and it is here only for testing purposes
+    })
+
+
+def devs_attrs_aggregate_data(request, actions, pks, attributes):
+    """Returns aggregate data based of specified action, devices, attributes.
+
+    The view will display a rendered html text page displaying aggregate data for the specified actions on specified
+    devices for all specified attributes.
+
+    :param request: an http GET request.
+    :param actions: names of actions separated by '&' (ex. act1&act2&act3). Currently supported: min, max, avg.
+    :param pks: primary keys of devices separated by '&' (ex. pk1&pk2&pk3).
+    :param attributes: names of attributes separated by '&' (ex. attr1&attr2&attr3).
+    :return: rendered html page with informations required.
+    """
+
+    if request.method != 'GET':
+        return HttpResponse(status=405)  # 405 Method Not Allowed
+
+    # dictionary of lists of report strings for html template
+    dev_report = {}
 
     # get list of devices' pks as strings and convert them to integer
     pk_list = [int(pk) for pk in pks.split('&')]
@@ -264,6 +352,6 @@ def aggregate_data(request, actions, pks, attributes):
                 dev_report[pk].append(aggr)
 
     # return the rendered webpage
-    return render(request, 'iot_backend/aggregate.html', {
+    return render(request, 'iot_backend/aggregate_data.html', {
         'dev_report': dev_report,
     })

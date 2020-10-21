@@ -9,36 +9,36 @@
       google.charts.load('current', {'packages':['corechart']});
       google.charts.setOnLoadCallback(drawChart);
 
-      var plot_table = [];
+      var chart_table = [];
 
       var header_point = []
-      {% for attr in plot_header %}
+      {% for attr in chart_header %}
 
         header_point.push('{{attr}}')
 
       {% endfor %}
 
-      plot_table.push(header_point)
+      chart_table.push(header_point)
 
 
-      {% for point in plot_points %}
+      {% for point in chart_points %}
 
         var new_point = []
 
         new_point.push(new Date({{point.0|date:'U'}} * 1000));
 
-        {% for attr in point|slice:"1:" %}
+        {% for attr in point|slice:'1:' %}
 
             new_point.push({{attr}});
 
         {% endfor %}
 
-        plot_table.push(new_point)
+        chart_table.push(new_point)
 
       {% endfor %}
       
       function drawChart() {
-        var data = google.visualization.arrayToDataTable(plot_table);
+        var data = google.visualization.arrayToDataTable(chart_table);
 
         var options = {
           title: 'Device information: {{device_id}}',

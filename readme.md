@@ -1,4 +1,4 @@
-A Django based server integrated with AWS IoT core services to handle fleets of IoT devices.
+A Django based server integrated with AWS IoT core services to handle fleets of IoT devices and their data.
 
 The server handles all aspects of the life cycle of an IoT device including:
 

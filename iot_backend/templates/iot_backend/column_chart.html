@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <script type="text/javascript">
+
+      google.charts.load('current', {'packages':['bar']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      var chart_table = [];
+
+      var header_point = []
+      {% for attr in chart_header %}
+
+        header_point.push('{{attr}}')
+
+      {% endfor %}
+
+      chart_table.push(header_point)
+
+
+      {% for point in chart_points %}
+
+        var new_point = []
+
+        new_point.push(new Date({{point.0|date:'U'}} * 1000));
+
+        {% for attr in point|slice:'1:' %}
+
+            new_point.push({{attr}});
+
+        {% endfor %}
+
+        chart_table.push(new_point)
+
+      {% endfor %}
+
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable(chart_table);
+
+        var options = {
+          chart: {
+            title: 'Aggregate data chart',
+            subtitle: '',
+          }
+        };
+
+        var chart = new google.charts.Bar(document.getElementById('columnchart_material'));
+
+        chart.draw(data, google.charts.Bar.convertOptions(options));
+      }
+
+    </script>
+
+  </head>
+
+
+  <body>
+
+    <div id="columnchart_material" style="width: 1400px; height: 500px;"></div>
+
+    <p> {{chart_title}} </p>
+    <p> {{chart_subtitle}} </p>
+    <p>            Number of logs entries for the specified device: {{logs_num}} </p>
+
+  </body>
+
+</html>
