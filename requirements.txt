@@ -1,4 +1,7 @@
 Django==3.1.2
 requests==2.24.0
-psycopg2-binary==2.8.6
-django-debug-toolbar==3.1.1
+
+psycopg2-binary==2.8.6  # PostgreSQL database adapter for Python
+django-debug-toolbar==3.1.1  # Interactive debug tool for SQL query perfomance
+
+boto3==1.16.4  # SDK for all AWS services
