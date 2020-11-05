@@ -10,21 +10,28 @@ import requests
 from math import floor
 from time import time
 from datetime import datetime
+import boto3
 
 from .models import DeviceType, Device, Log
 
 
 @csrf_exempt
-def confirm_token_aws(request):
-    """Confirms endpoint ownership.
+def confirm_destination_aws(request):
+    """Confirms endpoint ownership and sets aws destination status as 'ENABLED'.
 
-    :param request: a request containing an 'enableUrl' field in its body.
+    :param request: a request containing a 'confirmationToken' field in its body.
     :return: HttpResponse.
     """
     body = json.loads(request.body)
 
-    if 'enableUrl' in body:
-        requests.get(body['enableUrl'])
+    if 'confirmationToken' in body:
+        client = boto3.client('iot')
+        client.confirm_topic_rule_destination(confirmationToken=body['confirmationToken'])
+        client.update_topic_rule_destination(
+            arn=body['arn'],
+            status='ENABLED'
+        )
+
     else:
         return HttpResponse(status=400)  # 400 Bad Request
 
