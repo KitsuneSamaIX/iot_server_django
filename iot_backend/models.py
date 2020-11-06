@@ -11,7 +11,6 @@ class DeviceType(models.Model):
     data_format = models.JSONField(null=False, blank=False)
 
     class Meta:
-        unique_together = ('kind', 'model')
         constraints = [
             models.UniqueConstraint(fields=['kind', 'model', 'hardware_version'], name="unique_type"),
         ]
