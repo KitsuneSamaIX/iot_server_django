@@ -19,7 +19,7 @@ from .models import DeviceType, Device, Log
 def confirm_destination_aws(request):
     """Confirms endpoint ownership and sets aws destination status as 'ENABLED'.
 
-    :param request: a request containing a 'confirmationToken' field in its body.
+    :param request: A request containing a 'confirmationToken' field in its body.
     :return: HttpResponse.
     """
     body = json.loads(request.body)
@@ -42,7 +42,7 @@ def confirm_destination_aws(request):
 def device_data_dispatcher(request):
     """Dispatches requests to a suitable function.
 
-    :param request: a request containing one of the type specifiers in its header (ex. 'log').
+    :param request: A request containing one of the type specifiers in its header (ex. 'log').
     :return: HttpResponse.
     """
     headers = request.headers
@@ -60,7 +60,7 @@ def device_data_dispatcher(request):
 def save_device_log_data(request):
     """Registers a new device log in the database.
 
-    :param request: a request containing (in its body) a set of key fields which uniquely identifies a Device's entry
+    :param request: A request containing (in its body) a set of key fields which uniquely identifies a Device's entry
     and other arbitrary log fields to be saved in the database.
     :return: HttpResponse.
     """
@@ -94,7 +94,7 @@ def update_device_shadow_data(request):
     if the entry is found then it will be updated to the new parameters,
     if the device entry is not already in the database it will be created according to the parameters in the request.
 
-    :param request: a request containing a device's shadow data in its body.
+    :param request: A request containing a device's shadow data in its body.
     :return: HttpResponse.
     """
     body = json.loads(request.body)
@@ -149,10 +149,10 @@ def dev_attrs_line_chart(request, pk, attributes):
     This view will search for all logs of a given device(pk), then it will search in each log file to collect the
     specified attributes to fill the google charts template.
 
-    :param request: an http GET request.
-    :param pk: primary key of the device.
-    :param attributes: names of attributes to be showed on the graph separated by '&' (ex. attr1&attr2&attr3).
-    :return: a rendered google charts' line chart displaying required data.
+    :param request: An http GET request.
+    :param pk: Primary key of the device.
+    :param attributes: Names of attributes to be showed on the graph separated by '&' (ex. attr1&attr2&attr3).
+    :return: A rendered google charts' line chart displaying required data.
     """
 
     if request.method != 'GET':
@@ -223,12 +223,12 @@ def dev_attrs_aggregate_data_column_chart(request, timeframe, action, pk, attrib
     This view returns a rendered google charts' column chart template displaying attributes' aggregate data variations
     of the specified action for a given device on a given timeframe.
 
-    :param request: an http GET request.
-    :param timeframe: the desired timeframe name. Currently supported: year, month, day.
-    :param action: names of action. Currently supported: min, max, avg.
-    :param pk: primary key of the device.
-    :param attributes: names of attributes separated by '&' (ex. attr1&attr2&attr3).
-    :return: a rendered google charts' column chart displaying required data.
+    :param request: An http GET request.
+    :param timeframe: The desired timeframe name. Currently supported: year, month, day.
+    :param action: Names of action. Currently supported: min, max, avg.
+    :param pk: Primary key of the device.
+    :param attributes: Names of attributes separated by '&' (ex. attr1&attr2&attr3).
+    :return: A rendered google charts' column chart displaying required data.
     """
 
     if request.method != 'GET':
@@ -310,11 +310,11 @@ def devs_attrs_aggregate_data(request, actions, pks, attributes):
     The view will display a rendered html text page displaying aggregate data for the specified actions on specified
     devices for all specified attributes.
 
-    :param request: an http GET request.
-    :param actions: names of actions separated by '&' (ex. act1&act2&act3). Currently supported: min, max, avg.
-    :param pks: primary keys of devices separated by '&' (ex. pk1&pk2&pk3).
-    :param attributes: names of attributes separated by '&' (ex. attr1&attr2&attr3).
-    :return: rendered html page with informations required.
+    :param request: An http GET request.
+    :param actions: Names of actions separated by '&' (ex. act1&act2&act3). Currently supported: min, max, avg.
+    :param pks: Primary keys of devices separated by '&' (ex. pk1&pk2&pk3).
+    :param attributes: Names of attributes separated by '&' (ex. attr1&attr2&attr3).
+    :return: Rendered html page with informations required.
     """
 
     if request.method != 'GET':
